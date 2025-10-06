@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PSI Table (Inline JSON)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      /* ===== Design tokens ===== */
+      :root{
+        --bg: #f6f7fb;
+        --card-bg: #ffffff;
+        --text: #1f2328;
+        --muted: #6b7280;
+        --border: #e6e8ef;
+        --accent: #2563eb;
+        --accent-weak: #dbe7ff;
+        --row-hover: #f3f6ff;
+        --shadow: 0 10px 25px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg: #0f1115;
+          --card-bg: #151821;
+          --text: #e7e9ee;
+          --muted: #a0a7b4;
+          --border: #262b36;
+          --accent: #60a5fa;
+          --accent-weak: #1a2745;
+          --row-hover: #1a2030;
+          --shadow: 0 8px 24px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
+        }
+      }
+
+      /* ===== Page ===== */
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font: 16px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+        background: radial-gradient(1200px 600px at 10% -10%, var(--accent-weak), transparent) no-repeat,
+                    radial-gradient(1000px 500px at 100% 0, var(--accent-weak), transparent) no-repeat,
+                    var(--bg);
+        color: var(--text);
+        padding: clamp(20px, 4vw, 48px);
+      }
+
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+      }
+
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: clamp(16px, 2.5vw, 28px);
+      }
+
+      /* ===== Header ===== */
+      h2 {
+        margin: 0 0 .25rem;
+        font-size: clamp(1.25rem, 2.2vw, 1.6rem);
+        letter-spacing: .2px;
+      }
+      #timestring {
+        margin: 0 0 .75rem;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .legend {
+        display: inline-flex;
+        gap: .5rem;
+        align-items: center;
+        padding: .5rem .75rem;
+        background: color-mix(in lab, var(--accent), transparent 88%);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: .9rem;
+        margin-bottom: .5rem;
+      }
+      .legend::before{
+        content: "";
+        width: .6rem; height: .6rem;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px color-mix(in lab, var(--accent), transparent 85%);
+      }
+
+      /* ===== Table ===== */
+      .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: calc(var(--radius) - 4px);
+        border: 1px solid var(--border);
+        background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+                    linear-gradient( to right, transparent, transparent) border-box;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: separate; /* keep cell radius clean */
+        border-spacing: 0;
+        min-width: 560px; /* keeps columns readable on tiny screens */
+      }
+
+      th, td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        text-align: center;
+        white-space: nowrap;
+      }
+      th:first-child, td:first-child { text-align: left; }
+
+      thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: linear-gradient(180deg, color-mix(in lab, var(--card-bg), white 4%), var(--card-bg));
+        font-weight: 700;
+        border-bottom: 1px solid var(--border);
+      }
+
+      tbody tr:nth-child(odd) td {
+        background: color-mix(in lab, var(--card-bg), black 2.5%);
+      }
+
+      tbody tr:hover td {
+        background: var(--row-hover);
+      }
+
+      /* Rounded corners for outer cells */
+      thead th:first-child { border-top-left-radius: calc(var(--radius) - 6px); }
+      thead th:last-child  { border-top-right-radius: calc(var(--radius) - 6px); }
+      tbody tr:last-child td:first-child { border-bottom-left-radius: calc(var(--radius) - 6px); }
+      tbody tr:last-child td:last-child  { border-bottom-right-radius: calc(var(--radius) - 6px); }
+
+      /* Metric badge in first column */
+      td.metric {
+        font-weight: 600;
+      }
+      td.metric .badge{
+        display: inline-block;
+        padding: .3rem .6rem;
+        border-radius: 8px;
+        background: color-mix(in lab, var(--accent), transparent 88%);
+        border: 1px solid color-mix(in lab, var(--accent), transparent 70%);
+        color: var(--text);
+        font-size: .92rem;
+      }
+
+      /* Small screens: slightly tighter table */
+      @media (max-width: 520px){
+        th, td { padding: 10px 12px; font-size: .95rem; }
+      }
+
+      /* Optional: subtle value emphasis */
+      td[data-value]{
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h2>Singapore PSI Table</h2>
+        <div class="legend">Realtime from data.gov.sg</div>
+        <h4 id="timestring"></h4>
+
+        <div class="table-wrap">
+          <table id="PSItable" aria-describedby="timestring">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Central</th>
+                <th>West</th>
+                <th>East</th>
+                <th>North</th>
+                <th>South</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+    <script>
+      /* Your inline fallback data (kept as-is) */
+      const data = {
+        items: [
+          {
+            update_timestamp: "2025-10-06",
+            readings: {
+              psi: { west: 45, east: 42, central: 44, north: 43, south: 46 },
+            },
+          },
+        ],
+      };
+
+      // helper to render a row
+      function addRow(metric, values){
+        const tbody = d3.select("#PSItable").select("tbody");
+        const row = tbody.append("tr");
+        row.append("td").attr("class","metric")
+          .html(`<span class="badge">${metric}</span>`);
+        ["central", "west", "east", "north", "south"].forEach((region) => {
+          row.append("td")
+            .attr("data-value", values[region]) // allows CSS or tooltips later
+            .text(values[region] ?? "—");
+        });
+      }
+
+      // Try API first; fall back to inline data if it fails
+      fetch("https://api.data.gov.sg/v1/environment/psi")
+        .then((r) => r.json())
+        .then((live) => {
+          d3.select("#timestring").text(live.items?.[0]?.update_timestamp ?? "");
+          const readings = live.items?.[0]?.readings ?? {};
+          Object.keys(readings).forEach((metric) => addRow(metric, readings[metric]));
+        })
+        .catch(() => {
+          d3.select("#timestring").text(data.items[0].update_timestamp + " (fallback)");
+          const readings = data.items[0].readings;
+          Object.keys(readings).forEach((metric) => addRow(metric, readings[metric]));
+        });
+    </script>
+  </body>
+</html>
